@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29009.5
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keep_Computer_Healthy", "System_Programming_Final_Task\Keep_Computer_Healthy.csproj", "{634DC6E0-82C5-4AF5-AC3B-FA1B313E37C7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{634DC6E0-82C5-4AF5-AC3B-FA1B313E37C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{634DC6E0-82C5-4AF5-AC3B-FA1B313E37C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{634DC6E0-82C5-4AF5-AC3B-FA1B313E37C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{634DC6E0-82C5-4AF5-AC3B-FA1B313E37C7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0DC09D3F-3ADA-477D-85C5-02CDD6083975}
+	EndGlobalSection
+EndGlobal
