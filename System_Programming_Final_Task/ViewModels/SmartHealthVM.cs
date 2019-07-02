@@ -47,5 +47,13 @@ namespace System_Programming_Final_Task.ViewModels
             set { report = value;  OnPropertyChanged("Report"); }
         }
 
+        private Dictionary<string, int> swsCounts;
+
+        public Dictionary<string, int> SwsCounts
+        {
+            get { return swsCounts; }
+            set { swsCounts = value; OnPropertyChanged("SwsCounts"); }
+        }
+
     }
 }

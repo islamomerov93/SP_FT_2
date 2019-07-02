@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using System_Programming_Final_Task.Helper;
 using System_Programming_Final_Task.ViewModels;
-using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace System_Programming_Final_Task
 {
@@ -28,10 +26,16 @@ namespace System_Programming_Final_Task
         public MainWindow()
         {
             InitializeComponent();
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
             notification.ShowNotification("Smart Scanner", "\"Smart Scanner\" app is starting", System.Windows.Forms.ToolTipIcon.Info);
             notification = new Notification();
             SmartHealthVM = new SmartHealthVM();
             DataContext = SmartHealthVM;
+        }
+
+        void OnProcessExit(object sender, EventArgs e)
+        {
+            File.WriteAllLines("Report.txt", Report);
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -39,18 +43,32 @@ namespace System_Programming_Final_Task
             if (WB.CanGoBack) WB.GoBack();
         }
 
-        private void StartBtnClicked(object sender, RoutedEventArgs e)
+        private async void StartBtnClicked(object sender, RoutedEventArgs e)
         {
-            _ = Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            Task.Run(() =>
             {
-                Report = new ObservableCollection<string>();
-                SmartHealthVM.Report = null;
-                SmartHealthVM.InjuredFilesCount = 0;
-            }));
-            Task task = new Task(GetAllFiles);
+                List<string> Keys = new List<string>(swsCounts.Keys);
+                foreach (var item in Keys)
+                {
+                    swsCounts[item] = 0;
+                }
+                _ = Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    Report = new ObservableCollection<string>();
+                    SmartHealthVM.Report = null;
+                    SmartHealthVM.InjuredFilesCount = 0;
+                    SmartHealthVM.SwsCounts = null;
+                }));
+            }).Wait();
+
+            Task task = new Task(DoScan);
             Tasks.Add(task);
             task.Start();
-            TaskFactory.ContinueWhenAll(Tasks.ToArray(), (taskF) => notification.ShowNotification("Scan Completed", $"{SmartHealthVM.InjuredFilesCount} injured files are found !", System.Windows.Forms.ToolTipIcon.Warning, 5000));
+            _ = TaskFactory.ContinueWhenAll(Tasks.ToArray(), (taskF) =>
+            {
+                notification.ShowNotification("Scan Completed", $"{SmartHealthVM.InjuredFilesCount} injured files are found !", System.Windows.Forms.ToolTipIcon.Warning, 5000);
+                if (!File.Exists("Report.txt")) File.Create("Report.txt");
+            });
             notification = new Notification();
         }
 
@@ -80,7 +98,7 @@ namespace System_Programming_Final_Task
                 foreach (string d in Directory.GetDirectories(FolderForStartSearc))
                 {
                     DirectoryInfo directoryInfo = new DirectoryInfo(d);
-                    if (!directoryInfo.GetAccessControl().AreAccessRulesProtected) continue;
+                    if (directoryInfo.GetAccessControl().AreAccessRulesProtected) continue;
                     foreach (string file in Directory.GetFiles(d))
                     {
                         FileInfo fileInfo = new FileInfo(file);
@@ -100,11 +118,17 @@ namespace System_Programming_Final_Task
                             bool isInjured = await CheckForForbiddenWords(file, SmartHealthVM.SearchedWords, "*******");
                             if (isInjured)
                             {
-                                File.Copy(file, Destination1);
+                                lock (Destination1)
+                                {
+                                    File.Copy(file, Destination1);
+                                }
                                 if (!File.Exists(Destination2))
                                 {
-                                    ++SmartHealthVM.InjuredFilesCount;
-                                    File.Copy(file, Destination2);
+                                    lock (Destination2)
+                                    {
+                                        ++SmartHealthVM.InjuredFilesCount;
+                                        File.Copy(file, Destination2);
+                                    }
                                     await replaceString(Destination2, SmartHealthVM.SearchedWords, "*******");
                                 }
                             }
@@ -119,7 +143,7 @@ namespace System_Programming_Final_Task
             }
         }
 
-        private async void GetAllFiles()
+        private async void DoScan()
         {
             await DirSearch(FolderForStartSearc, FolderForSaveInjuredFiles);
 
@@ -128,6 +152,8 @@ namespace System_Programming_Final_Task
                 {
                     WB.Source = new Uri(FolderForSaveInjuredFiles);
                 }));
+            SmartHealthVM.SwsCounts = null;
+            SmartHealthVM.SwsCounts = swsCounts;
         }
 
         private async Task replaceString(String filename, ObservableCollection<String> searchedWords, String replace)
@@ -137,13 +163,20 @@ namespace System_Programming_Final_Task
             sr.Close();
             foreach (var searchedWord in searchedWords)
             {
-                StreamWriter sw = new StreamWriter(filename);
-                for (int i = 0; i < rows.Length; i++)
+                lock (filename)
                 {
-                    if (rows[i].Contains(searchedWord)) rows[i] = rows[i].Replace(searchedWord, replace);
-                    sw.WriteLine(rows[i]);
+                    StreamWriter sw = new StreamWriter(filename);
+                    for (int i = 0; i < rows.Length; i++)
+                    {
+                        if (rows[i].Contains(searchedWord))
+                        {
+                            rows[i] = rows[i].Replace(searchedWord, replace);
+                            ++swsCounts[searchedWord];
+                        }
+                        sw.WriteLine(rows[i]);
+                    }
+                    sw.Close();
                 }
-                sw.Close();
             }
         }
 
@@ -157,11 +190,7 @@ namespace System_Programming_Final_Task
             {
                 for (int i = 0; i < rows.Length; i++)
                 {
-                    if (rows[i].Contains(searchedWord))
-                    {
-                        ++swsCounts[searchedWord];
-                        IsInjured = true;
-                    }
+                    if (rows[i].Contains(searchedWord)) IsInjured = true;
                 }
             }
             if (IsInjured)
@@ -182,10 +211,27 @@ namespace System_Programming_Final_Task
             {
                 sws.Add(InjuredWordLbl.Text);
                 swsCounts.Add(InjuredWordLbl.Text, 0);
+                SmartHealthVM.SwsCounts = null;
+                SmartHealthVM.SwsCounts = swsCounts;
                 SmartHealthVM.SearchedWords = null;
                 SmartHealthVM.SearchedWords = sws;
+                InjuredWordLbl.Text = null;
             }
+        }
 
+        private void DeleteWordFromForbiddenWordsList(object sender, RoutedEventArgs e)
+        {
+            if (LB.SelectedItem != null)
+            {
+                string selected = LB.SelectedItem.ToString();
+                sws.Remove(selected);
+                swsCounts.Remove(selected);
+                SmartHealthVM.SwsCounts = null;
+                SmartHealthVM.SwsCounts = swsCounts;
+                SmartHealthVM.SearchedWords = null;
+                SmartHealthVM.SearchedWords = sws;
+                InjuredWordLbl.Text = null;
+            }
         }
     }
 }

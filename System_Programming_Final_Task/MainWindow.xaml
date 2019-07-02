@@ -22,10 +22,11 @@
                         <GroupBox Header="Add To List Of Forbidden Words" Margin="5" FontSize="14" FontWeight="SemiBold">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox x:Name="InjuredWordLbl" Margin="5" Height="30" Width="230" FontWeight="Normal"/>
-                                    <Button Content="Add" Margin="6 5 5 5" FontSize="12" Width="95" Click="AddWordToForbiddenWordsList"/>
+                                    <TextBox x:Name="InjuredWordLbl" Margin="5" Height="30" Width="214" FontWeight="Normal"/>
+                                    <Button Content="Add" Margin="6 5 5 5" FontSize="12" Width="50" Click="AddWordToForbiddenWordsList"/>
+                                    <Button Content="Delete" Margin="6 5 5 5" FontSize="12" Width="50" Click="DeleteWordFromForbiddenWordsList"/>
                                 </StackPanel>
-                                <ListBox Height="125" Margin="5 0 5 5" ItemsSource="{Binding SearchedWords,UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                                <ListBox x:Name="LB" Height="125" Margin="5 0 5 5" ItemsSource="{Binding SearchedWords,UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
                             </StackPanel>
                         </GroupBox>
                         <StackPanel Grid.Column="1">
@@ -66,7 +67,7 @@
                         <ListBox x:Name="FilesPaths" ItemsSource="{Binding Report,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Margin="5"/>
                     </TabItem>
                     <TabItem Header="Statistics" Background="AliceBlue">
-                        <ListBox x:Name="Statistics" ItemsSource="{Binding Raport,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Margin="5"/>
+                        <ListBox x:Name="Statistics" ItemsSource="{Binding SwsCounts,UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" Margin="5"/>
                     </TabItem>
                 </TabControl>
             </Border>
