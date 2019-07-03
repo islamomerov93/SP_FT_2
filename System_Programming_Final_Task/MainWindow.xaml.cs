@@ -23,6 +23,7 @@ namespace System_Programming_Final_Task
         TaskFactory TaskFactory = new TaskFactory();
         static string FolderForStartSearc = @"C:\";
         static string FolderForSaveInjuredFiles = FolderForStartSearc + @"InjuredFileScanner";
+
         public MainWindow()
         {
             InitializeComponent();
@@ -161,7 +162,7 @@ namespace System_Programming_Final_Task
             StreamReader sr = new StreamReader(filename);
             String[] rows = Regex.Split(sr.ReadToEnd(), "\r\n");
             sr.Close();
-            foreach (var searchedWord in searchedWords)
+            Parallel.ForEach(searchedWords, (searchedWord) =>
             {
                 lock (filename)
                 {
@@ -177,7 +178,7 @@ namespace System_Programming_Final_Task
                     }
                     sw.Close();
                 }
-            }
+            });
         }
 
         private async Task<bool> CheckForForbiddenWords(String filename, ObservableCollection<String> searchedWords, String replace)
@@ -186,13 +187,13 @@ namespace System_Programming_Final_Task
             StreamReader sr = new StreamReader(filename);
             String[] rows = Regex.Split(sr.ReadToEnd(), "\r\n");
             sr.Close();
-            foreach (var searchedWord in searchedWords)
+            Parallel.ForEach(searchedWords, (searchedWord) =>
             {
                 for (int i = 0; i < rows.Length; i++)
                 {
                     if (rows[i].Contains(searchedWord)) IsInjured = true;
                 }
-            }
+            });
             if (IsInjured)
             {
                 _ = Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
