@@ -44,8 +44,16 @@ namespace System_Programming_Final_Task
             if (WB.CanGoBack) WB.GoBack();
         }
 
-        private async void StartBtnClicked(object sender, RoutedEventArgs e)
+        private void StartBtnClicked(object sender, RoutedEventArgs e)
         {
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background,
+                new Action(() =>
+                {
+                    GB.IsEnabled = false;
+                    GBPath.IsEnabled = false;
+                    PBar.IsIndeterminate = true;
+                }));
+
             Task.Run(() =>
             {
                 List<string> Keys = new List<string>(swsCounts.Keys);
@@ -71,6 +79,9 @@ namespace System_Programming_Final_Task
                 if (!File.Exists("Report.txt")) File.Create("Report.txt");
             });
             notification = new Notification();
+            GB.IsEnabled = true;
+            GBPath.IsEnabled = true;
+            PBar.IsIndeterminate = false;
         }
 
         bool open = false;
@@ -94,12 +105,18 @@ namespace System_Programming_Final_Task
 
         async Task DirSearch(string FolderForStartSearc, string FolderForSaveInjuredFiles)
         {
-            try
+
+            foreach (string d in Directory.GetDirectories(FolderForStartSearc))
             {
-                foreach (string d in Directory.GetDirectories(FolderForStartSearc))
+                try
                 {
-                    DirectoryInfo directoryInfo = new DirectoryInfo(d);
-                    if (directoryInfo.GetAccessControl().AreAccessRulesProtected) continue;
+                    try
+                    {
+                        DirectoryInfo directoryInfo = new DirectoryInfo(d);
+                        if (directoryInfo.GetAccessControl().AreAccessRulesProtected) continue;
+                    }
+                    catch (Exception) { continue; }
+                    
                     foreach (string file in Directory.GetFiles(d))
                     {
                         FileInfo fileInfo = new FileInfo(file);
@@ -137,11 +154,9 @@ namespace System_Programming_Final_Task
                     }
                     await DirSearch(d, FolderForSaveInjuredFiles);
                 }
+                catch (System.Exception excpt) { continue; }
             }
-            catch (System.Exception excpt)
-            {
-                MessageBox.Show(excpt.Message);
-            }
+
         }
 
         private async void DoScan()
